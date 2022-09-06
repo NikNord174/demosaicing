@@ -1,0 +1,11 @@
+# env and system files
+venv/
+.vscode/
+.ipynb_checkpoints/
+
+# data files
+intern_task/
+rgb_images/
+
+# test files
+test.ipynb
