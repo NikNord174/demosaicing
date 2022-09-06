@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tf.keras import Model, models
-from tensorflow.keras import Model
 
 
 class UNet(Model):
