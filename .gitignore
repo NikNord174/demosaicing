@@ -4,7 +4,8 @@ venv/
 .ipynb_checkpoints/
 
 # data files
-intern_task/
+data/
+raw_images/
 rgb_images/
 
 # test files
