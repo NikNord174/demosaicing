@@ -2,11 +2,17 @@
 venv/
 .vscode/
 .ipynb_checkpoints/
+__pycache__/
 
 # data files
 data/
+data copy/
 raw_images/
 rgb_images/
 
 # test files
 test.ipynb
+tb.py
+
+# logs
+logs/

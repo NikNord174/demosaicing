@@ -1,79 +1,87 @@
-import logging
+import os
 from time import time
-from datetime import datetime
-from logging.handlers import RotatingFileHandler
+import datetime
+import tensorflow as tf
 
 from unet import UNet
+# from utils import check_data
 from constants import (
-    LR, BATCH_SIZE, EPOCHS, NO_PROGRESS_EPOCHS)
+    LR, EPOCHS, NO_PROGRESS_EPOCHS, TRAIN_FRACTION, TEST_FRACTION)
+from train_test import train_step, test_step
+from dataset import Image_Dataset
+from losses import MSE
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    filename='results/Experiments.log',
-    filemode='a',
-    format='%(message)s'
-)
-
-# logging into file
-file = logging.getLogger(__name__)
-file.setLevel(logging.INFO)
-file_formatter = logging.Formatter('%(message)s')
-file_handler = RotatingFileHandler(
-    'results/Experiments_main.log',
-    mode='a', maxBytes=5*1024*1024,
-    backupCount=2)
-file_handler.setFormatter(file_formatter)
-file.addHandler(file_handler)
-
-# console output
-console = logging.getLogger('console')
-console.setLevel(logging.INFO)
-console_formatter = logging.Formatter('%(message)s')
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(console_formatter)
-console.addHandler(console_handler)
+RGB_IMAGES_PATH = 'data/rgb_images'
+RAW_IMAGES_PATH = 'data/raw_images'
 
 
+current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
+test_log_dir = 'logs/gradient_tape/' + current_time + '/test'
+train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+test_summary_writer = tf.summary.create_file_writer(test_log_dir)
+
+
+train_dataset = Image_Dataset()
+val_dataset = Image_Dataset(train=False)
+train_loss = MSE
+val_loss = MSE
 model = UNet()
+optimizer = tf.keras.optimizers.Adam(learning_rate=LR)
+
 
 if __name__ == '__main__':
     try:
-        date = datetime.now()
-        file.info('Experiment: {}'.format(
-            date.strftime('%m/%d/%Y, %H:%M:%S')))
-        file.info('Model: {}'.format(model.__class__.__name__))
-        file.info('Model detail: {}'.format(model.__repr__()))
-        #file.info(f'Loss: {MSE_COEF}*MSE+{SSIM_COEF}*SSIM')
-        file.info('Batch size: {}'.format(BATCH_SIZE))
-        file.info('Learning rate: {}'.format(LR))
-        comment = input('Comment: ')
-        file.info('Comment: {}'.format(comment))
-        t0 = time()
-        test_loss_list = []
-        n = 0
+        # check_data(RAW_IMAGES_PATH, RGB_IMAGES_PATH)
+        val_loss_list = []
+        no_progress_counter = 0
         for epoch in range(EPOCHS):
-            
+            print("\nStart of epoch %d" % (epoch,))
+            start_time = time()
+            for idx in range(int(len(os.listdir(RAW_IMAGES_PATH)) * TRAIN_FRACTION)):
+                x_batch_train, y_batch_train = train_dataset.slice_image(idx)
+                print(x_batch_train.shape, y_batch_train.shape)
+                loss_value = train_step(
+                    x_batch_train, y_batch_train, model, optimizer)
+                print('batch_loss: ', loss_value.numpy())
+                with train_summary_writer.as_default():
+                    tf.summary.scalar(
+                        'batch_loss', loss_value, step=epoch)
+            train_loss_epoch = train_loss.result()
+            print("Training acc over epoch: %.4f" % (float(train_loss_epoch),))
+            with train_summary_writer.as_default():
+                tf.summary.scalar(
+                    'loss', train_loss.result(), step=epoch)
+            print(
+                'Training loss over epoch: {:.4f}'.format(
+                    float(loss_value),))
 
-
-
-            
-            t1 = (time() - t0) / 60
-            msg = 'Epoch: {}, test loss: {:.5f}, time: {:.2f} min'.format(
-                    epoch+1, test_loss, t1)
-            file.info(msg)
-            console.info(msg)
-            if test_loss <= min(test_loss_list):
-                n = 0
+            for idx in range(int(len(os.listdir(RAW_IMAGES_PATH)) * TEST_FRACTION)):
+                x_batch_val, y_batch_val = val_dataset.slice_image(idx)
+                print(x_batch_train.shape, y_batch_train.shape)
+                val_loss = test_step(x_batch_val, y_batch_val, model)
+            val_loss_epoch = val_loss.result()
+            val_loss_list.append(val_loss_epoch)
+            with test_summary_writer.as_default():
+                tf.summary.scalar('loss', val_loss.result(), step=epoch)
+            print("Validation loss: %.4f" % (float(val_loss_epoch),))
+            print("Time taken: %.2fs" % (time.time() - start_time))
+            train_loss.reset_states()
+            val_loss.reset_states()
+            if val_loss <= min(val_loss_list):
+                no_progress_counter = 0
                 continue
             else:
-                n += 1
-                if n > NO_PROGRESS_EPOCHS:
-                    progress_msg = 'No progress for more than 5 epochs'
-                    file.info(progress_msg)
-                    console.info(progress_msg)
+                no_progress_counter += 1
+                if no_progress_counter > NO_PROGRESS_EPOCHS:
+                    print('No progress for more than 5 epochs')
                     break
     except KeyboardInterrupt:
         raise KeyboardInterrupt('Learning has been stopped manually')
-    finally:
-        file.info('----------------')
+
+    '''for step, (x_batch_train, y_batch_train) in enumerate(train_dataset):
+        loss_value = train_step(x_batch_train, y_batch_train)
+
+    for x_batch_val, y_batch_val in val_dataset:
+        test_step(x_batch_val, y_batch_val)'''
