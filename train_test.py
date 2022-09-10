@@ -24,17 +24,3 @@ def train_step(x, y, model, optimizer) -> float:
 def test_step(x, y, model):
     outputs = model(x, training=False)
     val_loss.update_state(y, outputs)
-
-
-'''def train_step(x, y, model, optimizer):
-    with tf.GradientTape() as tape:
-        outputs = model(x, training=True)
-        loss = (tf.reduce_mean(SSIM(y, outputs, max_val=1)) + MSE(y, outputs))
-    grads = tape.gradient(loss, model.trainable_weights)
-    optimizer.apply_gradients(zip(grads, model.trainable_weights))
-    return loss
-
-
-def test_step(x, y, model):
-    outputs = model(x, training=False)
-    return MSE(y, outputs) + SSIM(y, outputs)'''

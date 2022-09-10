@@ -118,6 +118,6 @@ class UNet(tf.keras.Model):
         level_up_1 = self.up_block(buttom, level_3, out_channels=256)(buttom)
         level_up_2 = self.up_block(
             level_up_1, level_3, out_channels=128)(level_up_1)
-        level_up_4 = self.output(
+        level_up_3 = self.output(
             level_up_2, level_1, out_channels=64)(level_up_2)
-        return level_up_4
+        return level_up_3

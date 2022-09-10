@@ -4,7 +4,7 @@ import datetime
 import tensorflow as tf
 
 from unet import UNet
-# from utils import check_data
+# from utils import check_data  # <------ uncomment
 from constants import (
     LR, EPOCHS, NO_PROGRESS_EPOCHS, TRAIN_FRACTION, TEST_FRACTION)
 from train_test import train_step, test_step
@@ -33,7 +33,7 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=LR)
 
 if __name__ == '__main__':
     try:
-        # check_data(RAW_IMAGES_PATH, RGB_IMAGES_PATH)
+        # check_data(RAW_IMAGES_PATH, RGB_IMAGES_PATH)  # <------ uncomment
         val_loss_list = []
         no_progress_counter = 0
         for epoch in range(EPOCHS):

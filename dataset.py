@@ -15,7 +15,7 @@ class Image_Dataset():
         overlap_width_ratio: float = 0.2,
     ) -> None:
         files = os.listdir(raw_image_path)
-        files.remove('.DS_Store')
+        files.remove('.DS_Store')  # <------ delete
         if train:
             self.image_names = [
                 name.split('.')[0]
