@@ -41,35 +41,29 @@ if __name__ == '__main__':
             start_time = time()
             for idx in range(int(len(os.listdir(RAW_IMAGES_PATH)) * TRAIN_FRACTION)):
                 x_batch_train, y_batch_train = train_dataset.slice_image(idx)
-                print(x_batch_train.shape, y_batch_train.shape)
                 loss_value = train_step(
                     x_batch_train, y_batch_train, model, optimizer)
-                print('batch_loss: ', loss_value.numpy())
                 with train_summary_writer.as_default():
                     tf.summary.scalar(
                         'batch_loss', loss_value, step=epoch)
             train_loss_epoch = train_loss.result()
-            print("Training acc over epoch: %.4f" % (float(train_loss_epoch),))
+            print("Training loss over epoch: %.4f" % (float(train_loss_epoch),))
             with train_summary_writer.as_default():
                 tf.summary.scalar(
                     'loss', train_loss.result(), step=epoch)
-            print(
-                'Training loss over epoch: {:.4f}'.format(
-                    float(loss_value),))
 
             for idx in range(int(len(os.listdir(RAW_IMAGES_PATH)) * TEST_FRACTION)):
                 x_batch_val, y_batch_val = val_dataset.slice_image(idx)
-                print(x_batch_train.shape, y_batch_train.shape)
-                val_loss = test_step(x_batch_val, y_batch_val, model)
+                test_step(x_batch_val, y_batch_val, model)
             val_loss_epoch = val_loss.result()
             val_loss_list.append(val_loss_epoch)
             with test_summary_writer.as_default():
                 tf.summary.scalar('loss', val_loss.result(), step=epoch)
             print("Validation loss: %.4f" % (float(val_loss_epoch),))
-            print("Time taken: %.2fs" % (time.time() - start_time))
+            print("Time taken: %.2fs" % (time() - start_time))
             train_loss.reset_states()
             val_loss.reset_states()
-            if val_loss <= min(val_loss_list):
+            if val_loss_list[-1] <= min(val_loss_list):
                 no_progress_counter = 0
                 continue
             else:

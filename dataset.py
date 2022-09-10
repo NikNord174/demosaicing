@@ -73,4 +73,4 @@ class Image_Dataset():
         targets = tf.convert_to_tensor(
             [rgb_image[coord[1]:coord[3], coord[0]:coord[2], :]
                 for coord in slices_coordinates])
-        return samples, targets
+        return samples[:128, :, :, :], targets[:128, :, :, :]

@@ -112,12 +112,19 @@ class UNet(tf.keras.Model):
 
     def call(self, x):
         level_1 = self.input(out_channels=64)(x)
+        #print('level 1: ', level_1.shape)
         level_2 = self.down_block(out_channels=128)(level_1)
+        #print('level 2: ', level_1.shape)
         level_3 = self.down_block(out_channels=256)(level_2)
+        #print('level 3: ', level_1.shape)
         buttom = self.buttom(out_channels=512)(level_3)
+        #print('buttom: ', buttom.shape)
         level_up_1 = self.up_block(buttom, level_3, out_channels=256)(buttom)
+        #print('level_up_1: ', level_up_1.shape)
         level_up_2 = self.up_block(
-            level_up_1, level_3, out_channels=128)(level_up_1)
+            level_up_1, level_2, out_channels=128)(level_up_1)
+        #print('level_up_2: ', level_up_1.shape)
         level_up_3 = self.output(
             level_up_2, level_1, out_channels=64)(level_up_2)
+        #print('level_up_3: ', level_up_1.shape)
         return level_up_3
