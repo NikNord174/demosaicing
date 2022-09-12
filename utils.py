@@ -1,5 +1,6 @@
 import os
 import pickle
+import matplotlib.pyplot as plt
 
 from constants import DATASET_DIRECTORY, DATASET_NAME
 from convert_data import convert_data
@@ -38,3 +39,19 @@ def create_dataset(dataset) -> None:
         os.mkdir(DATASET_DIRECTORY)
     with open(f'.data/{DATASET_NAME}.pickle', 'wb') as f:
         pickle.dump(dataset, f)
+
+
+def illustration(fig, no, image, title, fontsize=28):
+    ax = fig.add_subplot(1, 2, no)
+    ax.set_title(title, fontsize=fontsize)
+    ax.imshow(image)
+    plt.axis('off')
+
+
+def imshow(image, fake):
+    image_np = image.numpy()
+    fake_np = fake.numpy()
+    fig = plt.figure(figsize=(15, 10))
+    illustration(fig, 1, image_np[0], 'Real Image')
+    illustration(fig, 2, fake_np[0], 'Fake Image')
+    plt.show()

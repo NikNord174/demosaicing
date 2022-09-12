@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from constants import POOL_MODE
+from constants import POOL_MODE, ReLU_FACTOR
 
 
 class UNet(tf.keras.Model):
@@ -20,7 +20,7 @@ class UNet(tf.keras.Model):
                 kernel_size=kernel_size,
                 activation=None),
             tf.keras.layers.BatchNormalization(axis=-1),
-            tf.keras.layers.LeakyReLU(alpha=0.2),
+            tf.keras.layers.LeakyReLU(alpha=ReLU_FACTOR),
         ]
         return tf.keras.models.Sequential(layers)
 
@@ -41,7 +41,7 @@ class UNet(tf.keras.Model):
         kernel_size: int = 3,
     ) -> tf.keras.models.Sequential:
         layers = [
-            tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=(2, 2)),
+            tf.keras.layers.MaxPool2D(pool_size=(4, 4)),
             self.conv_block(filters=out_channels, kernel_size=kernel_size),
             self.conv_block(filters=out_channels, kernel_size=kernel_size),
         ]
@@ -53,11 +53,11 @@ class UNet(tf.keras.Model):
         kernel_size: int = 3,
     ) -> tf.keras.models.Sequential:
         layers = [
-            tf.keras.layers.MaxPool2D(pool_size=(2, 2), strides=(2, 2)),
+            tf.keras.layers.MaxPool2D(pool_size=(4, 4)),
             self.conv_block(filters=out_channels, kernel_size=kernel_size),
             self.conv_block(filters=out_channels, kernel_size=kernel_size),
             tf.keras.layers.UpSampling2D(
-                size=(2, 2),
+                size=(4, 4),
                 data_format='channels_last',
                 interpolation=POOL_MODE,),
             self.conv_block(filters=out_channels//2, kernel_size=1),
@@ -83,7 +83,7 @@ class UNet(tf.keras.Model):
             self.conv_block(filters=out_channels, kernel_size=kernel_size),
             self.conv_block(filters=out_channels, kernel_size=kernel_size),
             tf.keras.layers.UpSampling2D(
-                size=(2, 2),
+                size=(4, 4),
                 data_format='channels_last',
                 interpolation=POOL_MODE,),
             self.conv_block(filters=out_channels//2, kernel_size=1),
@@ -112,19 +112,12 @@ class UNet(tf.keras.Model):
 
     def call(self, x):
         level_1 = self.input(out_channels=64)(x)
-        #print('level 1: ', level_1.shape)
         level_2 = self.down_block(out_channels=128)(level_1)
-        #print('level 2: ', level_1.shape)
         level_3 = self.down_block(out_channels=256)(level_2)
-        #print('level 3: ', level_1.shape)
         buttom = self.buttom(out_channels=512)(level_3)
-        #print('buttom: ', buttom.shape)
         level_up_1 = self.up_block(buttom, level_3, out_channels=256)(buttom)
-        #print('level_up_1: ', level_up_1.shape)
         level_up_2 = self.up_block(
             level_up_1, level_2, out_channels=128)(level_up_1)
-        #print('level_up_2: ', level_up_1.shape)
         level_up_3 = self.output(
             level_up_2, level_1, out_channels=64)(level_up_2)
-        #print('level_up_3: ', level_up_1.shape)
         return level_up_3

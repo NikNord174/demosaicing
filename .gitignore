@@ -9,6 +9,7 @@ data/
 data copy/
 raw_images/
 rgb_images/
+real_fake_images.png
 
 # test files
 test.ipynb
