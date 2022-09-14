@@ -2,8 +2,10 @@ import os
 import pickle
 import matplotlib.pyplot as plt
 
-from constants import DATASET_DIRECTORY, DATASET_NAME
+from constants import (
+    BATCH_SIZE, DATASET_DIRECTORY, CROP_HEIGHT, CROP_WIDTH, DATASET_NAME)
 from convert_data import convert_data
+from dataset import Image_Dataset
 
 
 def check_data(raw_images_path, rgb_images_path):
@@ -30,14 +32,22 @@ def check_data(raw_images_path, rgb_images_path):
         Check your data')
 
 
-def create_dataset(dataset) -> None:
+def create_dataset(
+    file_names: list,
+    dataset_name: str = DATASET_NAME,
+    crop_height: int = CROP_HEIGHT,
+    crop_width: int = CROP_WIDTH,
+    batch_size: int = BATCH_SIZE
+) -> None:
     """Create dataset and save it locally."""
-    with open('.data/wiki_corpus.pickle', 'rb') as f:
-        wiki_corpus = pickle.load(f)
-    dataset = dataset(wiki_corpus[:2000])
+    dataset = Image_Dataset(
+        file_names=file_names,
+        crop_height=crop_height,
+        crop_width=crop_width,
+        batch_size=batch_size)
     if not os.path.exists(DATASET_DIRECTORY):
         os.mkdir(DATASET_DIRECTORY)
-    with open(f'.data/{DATASET_NAME}.pickle', 'wb') as f:
+    with open(DATASET_DIRECTORY + f'{dataset_name}.pickle', 'wb') as f:
         pickle.dump(dataset, f)
 
 

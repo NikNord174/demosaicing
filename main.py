@@ -1,16 +1,16 @@
 import os
 from time import time
 import datetime
+import pickle
 import tensorflow as tf
 
 from unet import UNet
-from utils import check_data
+from utils import create_dataset, imshow, check_data
 from constants import (
-    LR, EPOCHS, BATCH_SIZE, NO_PROGRESS_EPOCHS, TRAIN_FRACTION)
+    LR, EPOCHS, BATCH_SIZE, NO_PROGRESS_EPOCHS,
+    TRAIN_FRACTION, DATASET_DIRECTORY)
 from train_test import train_step, test_step
-from dataset import Image_Dataset
 from losses import MSE
-from utils import imshow
 
 
 RGB_IMAGES_PATH = 'data/rgb_images'
@@ -24,13 +24,6 @@ train_summary_writer = tf.summary.create_file_writer(train_log_dir)
 test_summary_writer = tf.summary.create_file_writer(test_log_dir)
 
 
-image_names = os.listdir(RAW_IMAGES_PATH)
-train_image_names = image_names[:int(len(image_names) * TRAIN_FRACTION)]
-val_image_names = image_names[int(len(image_names) * TRAIN_FRACTION):]
-train_dataset = Image_Dataset(
-    file_names=train_image_names, batch_size=BATCH_SIZE)
-val_dataset = Image_Dataset(
-    file_names=val_image_names, batch_size=BATCH_SIZE)
 train_loss = MSE
 val_loss = MSE
 model = UNet()
@@ -39,9 +32,29 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=LR)
 
 if __name__ == '__main__':
     try:
+        # check if data folder exists and data is structured
         check_data(RAW_IMAGES_PATH, RGB_IMAGES_PATH)
+        # create datasets if they do not exist
+        if not os.path.exists('.data/train.pickle'):
+            image_names = os.listdir(RAW_IMAGES_PATH)
+            train_image_names = image_names[
+                :int(len(image_names) * TRAIN_FRACTION)]
+            val_image_names = image_names[
+                int(len(image_names) * TRAIN_FRACTION):]
+            create_dataset(
+                file_names=train_image_names,
+                dataset_name='train',
+                batch_size=BATCH_SIZE)
+            create_dataset(
+                file_names=val_image_names,
+                dataset_name='val',
+                batch_size=BATCH_SIZE)
         val_loss_list = []
         no_progress_counter = 0
+        train_dataset = pickle.load(
+            open(DATASET_DIRECTORY + 'train.pickle', 'rb'))
+        val_dataset = pickle.load(
+            open(DATASET_DIRECTORY + 'val.pickle', 'rb'))
         for epoch in range(EPOCHS):
             print('Start of epoch {}'.format(epoch))
             start_time = time()
