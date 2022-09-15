@@ -1,26 +1,33 @@
 import tensorflow as tf
 
-from losses import MSE
-
-tf.config.run_functions_eagerly(True)
+# tf.config.run_functions_eagerly(True)
 
 
-train_loss = MSE
-val_loss = MSE
-
-
-@tf.function
-def train_step(x, y, model, optimizer) -> float:
+def train_step(
+    real: tf.Tensor,
+    ground: tf.Tensor,
+    model: tf.keras.Model,
+    loss_function: tf.keras.losses,
+    optimizer: tf.keras.optimizer,
+    train_loss: tf.keras.metrics
+) -> None:
+    """Train step for training"""
     with tf.GradientTape() as tape:
-        outputs = model(x, training=True)
-        loss = MSE(y, outputs)
-    grads = tape.gradient(loss, model.trainable_weights)
-    optimizer.apply_gradients(zip(grads, model.trainable_weights))
-    train_loss.update_state(y, outputs)
-    return loss
+        predictions = model(real)
+        loss = loss_function(ground, predictions)
+    gradients = tape.gradient(loss, model.trainable_variables)
+    optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+    train_loss(loss)
 
 
-@tf.function
-def test_step(x, y, model):
-    outputs = model(x, training=False)
-    val_loss.update_state(y, outputs)
+def val_step(
+    real: tf.Tensor,
+    ground: tf.Tensor,
+    model: tf.keras.Model,
+    loss_function: tf.keras.losses,
+    val_loss: tf.keras.metrics
+) -> None:
+    "Test step for training"""
+    predictions = model(real)
+    v_loss = loss_function(ground, predictions)
+    val_loss(v_loss)

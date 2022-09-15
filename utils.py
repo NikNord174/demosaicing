@@ -1,14 +1,22 @@
 import os
 import pickle
+import tensorflow as tf
 import matplotlib.pyplot as plt
 
 from constants import (
-    BATCH_SIZE, DATASET_DIRECTORY, CROP_HEIGHT, CROP_WIDTH, DATASET_NAME)
+    BATCH_SIZE, DATASET_DIRECTORY, CROP_HEIGHT, CROP_WIDTH,
+    DATASET_NAME, RAW_IMAGES_PATH, RGB_IMAGES_PATH)
 from convert_data import convert_data
 from dataset import Image_Dataset
 
 
-def check_data(raw_images_path, rgb_images_path):
+def check_data(
+    raw_images_path: str = RAW_IMAGES_PATH,
+    rgb_images_path: str = RGB_IMAGES_PATH
+) -> None:
+    """Check if data folder exists and
+    if number of raw files is the same as rgb files"""
+
     if not os.path.isdir('new_folder'):
         raise Exception(
             'All data must be in "data" folder. Raw images must be \
@@ -58,7 +66,8 @@ def illustration(fig, no, image, title, fontsize=28):
     plt.axis('off')
 
 
-def imshow(image, fake):
+def imshow(image: tf.Tensor, fake: tf.Tensor) -> None:
+    """Draws raw and generated rgb photos"""
     image_np = image.numpy()
     fake_np = fake.numpy()
     fig = plt.figure(figsize=(15, 10))

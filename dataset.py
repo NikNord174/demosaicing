@@ -1,7 +1,8 @@
-import os
 import random
-import colour
+import rawpy
 import tensorflow as tf
+
+from constants import DATASET_DIRECTORY
 
 
 class Image_Dataset():
@@ -24,18 +25,18 @@ class Image_Dataset():
         self.raw_images, self.rgb_images = self.load_images()
 
     def load_images(self):
-        raw_images_initial = [tf.transpose(
-            tf.convert_to_tensor(
-                colour.io.read_image(
-                    os.path.join(
-                        f'data/raw_images/{raw_image}.dng'))
-                ), [1, 0]) for raw_image in self.image_names]
+        raw_images_initial = [tf.transpose(tf.convert_to_tensor(
+            rawpy.imread(
+                DATASET_DIRECTORY + f'raw_images/{raw_image}.dng'
+            ).raw_image_visible,
+            dtype=tf.dtypes.uint8) / 255, [1, 0])
+            for raw_image in self.image_names]
         raw_images = [tf.reshape(
             raw_image, [raw_image.shape[0], raw_image.shape[1], 1])
             for raw_image in raw_images_initial]
         rgb_images = [tf.transpose(tf.io.decode_image(
             tf.io.read_file(
-                f'data/rgb_images/{rgb_image}.png'),
+                DATASET_DIRECTORY + f'rgb_images/{rgb_image}.png'),
             channels=3,
             dtype=tf.dtypes.float32), [1, 0, 2])
             for rgb_image in self.image_names]
@@ -47,7 +48,7 @@ class Image_Dataset():
         extra_pixels = image_side - crops_num * crop_side
         return (crop_side - extra_pixels) // (crops_num + 1)
 
-    def get_crops_coordinates(self) -> list[list[int]]:
+    def get_crops_coordinates(self) -> list:
         """Calculate list of lists with 4 coordinates of crops"""
         crop_coordinates = []
         if not self.image_height % self.crop_height == 0:
@@ -100,7 +101,7 @@ class Image_Dataset():
         self,
         crop_idx_list: list,
         counter: int
-    ) -> list[tf.Tensor, tf.Tensor]:
+    ) -> list:
         """Returns batch of crops"""
         start = counter
         if not (counter + self.batch_size >= len(crop_idx_list)):
